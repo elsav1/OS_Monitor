@@ -1,109 +1,117 @@
-# AI-Powered OS Monitor
+# 🚀 AI-Powered OS Monitor Pro
 
-An AI-powered system monitoring tool that collects real-time system metrics, logs them into a database, and uses machine learning for anomaly detection. The project includes a backend for monitoring, a PyQt5-based UI for visualization, and an ML module for training and detecting anomalies.
+A state-of-the-art, AI-powered system monitoring tool that collects real-time system metrics, logs them into a durable database, and uses machine learning for anomaly detection. 
 
-## Table of Contents
+The project features a lightweight backend telemetry collector, an advanced **Machine Learning Pipeline (StandardScaler + IsolationForest)**, and a highly polished **PyQt5/PyQtGraph-based UI** for buttery-smooth 60 FPS visualization.
 
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Requirements](#requirements)
-- [Setup Instructions](#setup-instructions)
-- [Usage](#usage)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+## ✨ Features
 
-## Overview
+- **5-Dimensional Telemetry**: Tracks CPU, Memory, Disk, Network Velocity, and **Swap Memory** in real-time.
+- **Premium Dark Mode UI**: A stunning `QPalette` Fusion dark theme with a modern card-based layout and synchronized grid charts.
+- **60 FPS Rendering**: Uses `pyqtgraph` (bypassing slow matplotlib redraws) for instantaneous, lag-free data plotting.
+- **AI Anomaly Detection**: Unsupervised `IsolationForest` continuously calculates feature-space distances to flag spontaneous background performance spikes.
+- **Native OS Integration**: 
+  - Triggers native Windows Desktop Toast Notifications (`plyer`) instantly upon an anomaly.
+  - Minimizes to the System Tray for true background execution.
+- **Durable Logging**: Every telemetry tick and anomaly evaluation is permanently stored in an append-only `SQLite3` database for historical audits.
 
-The AI-Powered OS Monitor continuously tracks system metrics (CPU, memory, disk, and network usage) and logs them into a SQLite database. An anomaly detection model based on Isolation Forest identifies unusual patterns. The results are displayed in a real-time PyQt5 UI, which includes a dynamic graph and alert labels.
+---
 
+## 🛠 Project Structure
 
-## Requirements
+```text
+AI-Powered-OS-Monitor/
+├── backend-monitoring/
+│   ├── database.py             # Schema definition & recreation scripts
+│   └── monitor_with_anomaly.py # The background collector, ML evaluator, and alerter
+├── frontend-ui/
+│   ├── main.py                 # The Pyqt5/Pyqtgraph High-Performance Dashboard
+│   ├── system_logs.db          # SQLite Database
+│   └── system_stats.txt        # Inter-process communication buffer
+├── ml-ai/
+│   ├── anomaly_detection.py    # Training script to build the StandardScaler pipeline
+│   └── isolation_forest_model.pkl # The serialized, active AI model
+├── requirements.txt
+└── README.md
+```
 
-- **Python 3.6+**
-- **PyQt5** – for the graphical UI.
-- **matplotlib** – for plotting the CPU usage graph.
-- **psutil** – for accessing system metrics.
-- **scikit-learn** – for the Isolation Forest model.
-- **joblib** – for model serialization.
-- pip install -r requirements.txt
+---
 
+## 💻 Requirements
 
-## Setup Instructions
-Clone the Repository:
+- **Python 3.10+** (Tested on 3.12)
+- Built on top of `PyQt5`, `pyqtgraph`, `scikit-learn`, `psutil`, and `plyer`.
+- For the full list, see [requirements.txt](requirements.txt).
 
+---
 
+## 🚀 Setup Instructions
+
+1. **Clone the Repository:**
+```bash
 git clone https://github.com/yourusername/AI-Powered-OS-Monitor.git
 cd AI-Powered-OS-Monitor
-Create and Activate a Virtual Environment (Recommended):
+```
 
+2. **Create and Activate a Virtual Environment:**
+```bash
+# Windows
 python -m venv venv
-### On Linux/Mac
-source venv/bin/activate
-### On Windows
 venv\Scripts\activate
-Install Dependencies:
 
+# Linux/Mac
+python3 -m venv venv
+source venv/bin/activate
+```
 
+3. **Install Dependencies:**
+```bash
 pip install -r requirements.txt
-Database Setup: Run the following command to create or update the database with the necessary tables:
+```
 
-
+4. **Initialize the Database:**  
+*Run to create/recreate the 5-feature database schema.*
+```bash
 python backend-monitoring/database.py
-Generate the Anomaly Detection Model: Navigate to the ml-ai folder and run the training script:
+```
 
+5. **Train the Initial Anomaly Model:**  
+*Will train on the existing database, or explicitly generate synthetic baseline data.*
+```bash
+python ml-ai/anomaly_detection.py
+```
 
-cd ml-ai
-python anomaly_detection.py
-This will train an Isolation Forest model (using synthetic or historical data) and save it as isolation_forest_model.pkl.
+---
 
-## Usage
-Starting the Monitoring Pipeline
-Start the Monitoring Script with Anomaly Detection: Open a terminal and run:
+## 🎮 Usage
 
+You need two active terminals (both with your `venv` activated) to run the full application suite.
+
+**Terminal 1: Start the Background AI Telemetry Agent**
+```bash
 python backend-monitoring/monitor_with_anomaly.py
-This script collects system metrics, applies anomaly detection, writes stats to system_stats.txt, and logs data to system_logs.db.
+```
+*This script will run silently in the background. It will log data, evaluate AI predictions, and trigger native Windows Toast Notifications if a critical anomaly occurs.*
 
-Launch the GUI: Open a second terminal and run:
-
-
+**Terminal 2: Launch the Pro Dashboard**
+```bash
 python frontend-ui/main.py
-The PyQt5 interface will open, displaying:
+```
+*The PyQt5 Pro interface will open displaying your real-time metrics, dynamically plotted smooth charts, and a master system Status Indicator.*
 
-Real-time system metrics with color-coded labels.
+### Simulating an Anomaly
+If you want to manually test the UI and OS notification integrations without waiting for a real system spike:
+1. Keep both the frontend and backend running.
+2. Open `frontend-ui/system_stats.txt` in a text editor.
+3. The string looks like this: `12.0, 45.3, 80.1, 0.5, 40.0, 0`
+4. Change the final `0` to a `1` and save the file.
+5. The UI will instantly turn red, and a Desktop Notification will explicitly fire!
 
-A dynamic graph plotting CPU usage over time.
+---
 
-An alert label that indicates if an anomaly is detected.
+## 🤝 Contributing
 
-## Testing
-Manual Testing
-Database Verification:
-Confirm that system_logs.db is updated with records containing system metrics and an anomaly flag.
+Contributions are welcome! Please fork the repository and submit pull requests. Ensure your code follows the project structure and is well-documented. For major changes involving the UI or the AI Pipeline, open an issue first to discuss what you would like to change.
 
-File Check:
-Inspect system_stats.txt to ensure it contains five comma-separated values (CPU, Memory, Disk, Network, and Anomaly flag).
-
-UI Testing:
-Run the UI (main.py) and verify that labels update and the graph reflects CPU usage. Manually edit system_stats.txt to simulate an anomaly (e.g., set the anomaly flag to 1) and observe the UI changes.
-
-Automated Testing
-Consider adding tests in a tests/ directory and using a framework like pytest:
-
-pytest tests/
-Contributing
-Contributions are welcome! Please fork the repository and submit pull requests. Ensure your code follows the project structure and is well-documented. For major changes, open an issue first to discuss what you would like to change.
-
-License
+## 📄 License
 This project is licensed under the MIT License. See the LICENSE file for details.
-
-Acknowledgements
-Inspired by the need for robust, real-time system monitoring.
-
-Utilizes the Isolation Forest algorithm for effective anomaly detection.
-
-Thanks to the contributors and open-source libraries that make this project possible.
-
-
-Feel free to adjust the repository URL, contribution guidelines, or any additional details as n
