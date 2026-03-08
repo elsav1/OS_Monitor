@@ -7,14 +7,16 @@ def create_database():
     db_path = os.path.join(BASE_DIR, '..', 'frontend-ui', 'system_logs.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS logs")
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
+        CREATE TABLE logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             cpu_usage REAL,
             memory_usage REAL,
             disk_usage REAL,
             network_usage REAL,
+            swap_usage REAL,
             is_anomaly INTEGER
         )
     """)
@@ -22,16 +24,16 @@ def create_database():
     conn.close()
     print("Database and table created with anomaly column.")
 
-def log_system_stats(cpu, memory, disk, network, anomaly):
+def log_system_stats(cpu, memory, disk, network, swap, anomaly):
     
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(BASE_DIR, '..', 'frontend-ui', 'system_logs.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO logs (cpu_usage, memory_usage, disk_usage, network_usage, is_anomaly)
-        VALUES (?, ?, ?, ?, ?)
-    """, (cpu, memory, disk, network, anomaly))
+        INSERT INTO logs (cpu_usage, memory_usage, disk_usage, network_usage, swap_usage, is_anomaly)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (cpu, memory, disk, network, swap, anomaly))
     conn.commit()
     conn.close()
 

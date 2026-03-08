@@ -5,6 +5,10 @@ import queue
 import sqlite3
 import joblib
 import os
+try:
+    from plyer import notification
+except ImportError:
+    notification = None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, '..', 'ml-ai', 'isolation_forest_model.pkl')
@@ -15,9 +19,9 @@ anomaly_model = joblib.load(MODEL_PATH)
 
 log_queue = queue.Queue()
 
-def write_system_stats_to_file(cpu, memory, disk, network, anomaly):
+def write_system_stats_to_file(cpu, memory, disk, network, swap, anomaly):
     with open(STATS_FILE, "w") as f:
-        f.write(f"{cpu}, {memory}, {disk}, {network}, {anomaly}")
+        f.write(f"{cpu}, {memory}, {disk}, {network}, {swap}, {anomaly}")
 
 def database_worker(db_path, log_queue):
     conn = sqlite3.connect(db_path, check_same_thread=False)
@@ -27,11 +31,11 @@ def database_worker(db_path, log_queue):
             log_entry = log_queue.get(timeout=5)
             if log_entry is None:
                 break
-            cpu, memory, disk, network, anomaly = log_entry
+            cpu, memory, disk, network, swap, anomaly = log_entry
             cursor.execute("""
-                INSERT INTO logs (cpu_usage, memory_usage, disk_usage, network_usage, is_anomaly)
-                VALUES (?, ?, ?, ?, ?)
-            """, (cpu, memory, disk, network, anomaly))
+                INSERT INTO logs (cpu_usage, memory_usage, disk_usage, network_usage, swap_usage, is_anomaly)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (cpu, memory, disk, network, swap, anomaly))
             conn.commit()
             log_queue.task_done()
         except queue.Empty:
@@ -52,6 +56,7 @@ def monitor_system():
         cpu_usage = psutil.cpu_percent(interval=None)
         memory_usage = psutil.virtual_memory().percent
         disk_usage = psutil.disk_usage('/').percent
+        swap_usage = psutil.swap_memory().percent
 
         current_net = psutil.net_io_counters()
         current_time = time.time()
@@ -66,14 +71,25 @@ def monitor_system():
         prev_net = current_net
         prev_time = current_time
 
-        features = [[cpu_usage, memory_usage, disk_usage, network_usage]]
+        features = [[cpu_usage, memory_usage, disk_usage, network_usage, swap_usage]]
         prediction = anomaly_model.predict(features)
         anomaly_flag = 1 if prediction[0] == -1 else 0
 
-        print(f"CPU: {cpu_usage}%, Memory: {memory_usage}%, Disk: {disk_usage}%, Network: {network_usage} MB/s, Anomaly: {anomaly_flag}")
+        print(f"CPU: {cpu_usage}%, Memory: {memory_usage}%, Disk: {disk_usage}%, Network: {network_usage} MB/s, Swap: {swap_usage}%, Anomaly: {anomaly_flag}")
 
-        write_system_stats_to_file(cpu_usage, memory_usage, disk_usage, network_usage, anomaly_flag)
-        log_queue.put((cpu_usage, memory_usage, disk_usage, network_usage, anomaly_flag))
+        if anomaly_flag == 1 and notification:
+            try:
+                notification.notify(
+                    title="System Anomaly Detected!",
+                    message=f"CPU: {cpu_usage}%, Mem: {memory_usage}%, Swap: {swap_usage}%\nInvestigate immediately.",
+                    app_name="AI OS Monitor",
+                    timeout=5,
+                )
+            except Exception as e:
+                print(f"Failed to send notification: {e}")
+
+        write_system_stats_to_file(cpu_usage, memory_usage, disk_usage, network_usage, swap_usage, anomaly_flag)
+        log_queue.put((cpu_usage, memory_usage, disk_usage, network_usage, swap_usage, anomaly_flag))
 
 if __name__ == '__main__':
     monitor_system()
